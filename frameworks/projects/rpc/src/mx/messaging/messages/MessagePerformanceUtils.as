@@ -29,7 +29,13 @@ package mx.messaging.messages
      * @example
      * <pre>
      *      var mpiutil:MessagePerformanceUtils = new MessagePerformanceUtils(event.message);
-     * </pre>    
+     * </pre> 
+     *
+     * @langversion 3.0
+     * @playerversion Flash 9
+     * @playerversion AIR 1.1
+     * @productversion BlazeDS 4
+     * @productversion LCDS 3     
      * 
      */ 
     public class MessagePerformanceUtils
@@ -91,7 +97,13 @@ package mx.messaging.messages
          * of the passed in message
          * 
          * @param message The message whose MPI headers will be used in retrieving
-         * MPI information  
+         * MPI information
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3         
          */                 
         public function MessagePerformanceUtils(message:Object):void
         {
@@ -121,6 +133,12 @@ package mx.messaging.messages
          * for it from the server
          * 
          * @return Total time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get totalTime():Number
         {
@@ -136,16 +154,22 @@ package mx.messaging.messages
          * to be sent to the receiving client.  
          * 
          * @return Server processing time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get serverProcessingTime():Number
         {
             if (pushedMessageFlag)
             {
-                return mpip.serverPrePushTime - mpip.receiveTime;
+            	return mpip.serverPrePushTime - mpip.receiveTime;
             }
             else
             {
-                return mpio.sendTime - mpii.receiveTime;
+            	return mpio.sendTime - mpii.receiveTime;
             }                
         }       
         
@@ -154,6 +178,12 @@ package mx.messaging.messages
          * messages out to other clients as a result of the original message.  
          * 
          * @return Server pre-push processing time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get serverPrePushTime():Number
         {
@@ -171,28 +201,34 @@ package mx.messaging.messages
          * to be pushed to the receiving client.  
          * 
          * @return Server adapter processing time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */           
-        public function get serverAdapterTime():Number
-        {
-            if (pushedMessageFlag)
-            {
-                if (mpip == null)
-                    return 0;
-                if (mpip.serverPreAdapterTime == 0 || mpip.serverPostAdapterTime == 0)
-                    return 0;
-            
-                return mpip.serverPostAdapterTime - mpip.serverPreAdapterTime;              
-            }
-            else
-            {
-                if (mpii == null)
-                    return 0;
-                if (mpii.serverPreAdapterTime == 0 || mpii.serverPostAdapterTime == 0)
-                    return 0;
-            
-                return mpii.serverPostAdapterTime - mpii.serverPreAdapterTime;
-            }
-        }   
+		public function get serverAdapterTime():Number
+		{
+			if (pushedMessageFlag)
+			{
+				if (mpip == null)
+					return 0;
+				if (mpip.serverPreAdapterTime == 0 || mpip.serverPostAdapterTime == 0)
+					return 0;
+			
+				return mpip.serverPostAdapterTime - mpip.serverPreAdapterTime;				
+			}
+			else
+			{
+				if (mpii == null)
+					return 0;
+				if (mpii.serverPreAdapterTime == 0 || mpii.serverPostAdapterTime == 0)
+					return 0;
+			
+				return mpii.serverPostAdapterTime - mpii.serverPreAdapterTime;
+			}
+		}	
 
         /**
          * Time spent in a module invoked from the adapter associated with the destination for this message 
@@ -200,65 +236,89 @@ package mx.messaging.messages
          * prepared to be pushed to the receiving client.  
          * 
          * @return Server adapter-external processing time in milliseconds
-         */         
-        public function get serverAdapterExternalTime():Number
-        {
-            if (pushedMessageFlag)
-            {
-                if (mpip == null)
-                    return 0;
-                if (mpip.serverPreAdapterExternalTime == 0 || mpip.serverPostAdapterExternalTime == 0)
-                    return 0;
-            
-                return mpip.serverPostAdapterExternalTime - mpip.serverPreAdapterExternalTime;              
-            }
-            else            
-            {
-                if (mpii == null)
-                    return 0;
-                if (mpii.serverPreAdapterExternalTime == 0 || mpii.serverPostAdapterExternalTime == 0)
-                    return 0;
-            
-                return mpii.serverPostAdapterExternalTime - mpii.serverPreAdapterExternalTime;
-            }
-        }   
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
+         */ 		
+		public function get serverAdapterExternalTime():Number
+		{
+			if (pushedMessageFlag)
+			{
+				if (mpip == null)
+					return 0;
+				if (mpip.serverPreAdapterExternalTime == 0 || mpip.serverPostAdapterExternalTime == 0)
+					return 0;
+			
+				return mpip.serverPostAdapterExternalTime - mpip.serverPreAdapterExternalTime;				
+			}
+			else			
+			{
+				if (mpii == null)
+					return 0;
+				if (mpii.serverPreAdapterExternalTime == 0 || mpii.serverPostAdapterExternalTime == 0)
+					return 0;
+			
+				return mpii.serverPostAdapterExternalTime - mpii.serverPreAdapterExternalTime;
+			}
+		}	
 
         /**
          * Time that the message waited on the server after it was ready to be pushed to the client
          * but had not yet been polled for.
-         */     
-        public function get serverPollDelay():Number
-        {
-            if (mpip == null)
-                return 0;
-            if (mpip.serverPrePushTime == 0 || mpio.sendTime == 0)
-                return 0;
-            
-            return mpio.sendTime - mpip.serverPrePushTime;  
-        }
-        
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
+         */		
+		public function get serverPollDelay():Number
+		{
+			if (mpip == null)
+				return 0;
+			if (mpip.serverPrePushTime == 0 || mpio.sendTime == 0)
+				return 0;
+			
+			return mpio.sendTime - mpip.serverPrePushTime;	
+		}
+		
         /**
          * Server processing time spent outside of the adapter associated with the destination of this message
          * 
          * @return Non-adapter server processing time in milliseconds
-         */         
-        public function get serverNonAdapterTime():Number
-        {       
-            return serverProcessingTime - serverAdapterTime;
-        }       
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
+         */ 		
+		public function get serverNonAdapterTime():Number
+		{		
+			return serverProcessingTime - serverAdapterTime;
+		}		
         
         /**
          * The network round trip time for a client message and the server response to it,
          * calculated by the difference between total time and server processing time
          * 
          * @return Network round trip time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */             
         public function get networkRTT():Number
         {
-            if (!pushedMessageFlag)
-                return totalTime - serverProcessingTime;
+        	if (!pushedMessageFlag)
+            	return totalTime - serverProcessingTime;
             else
-                return 0;
+            	return 0;
         }           
         
         /**
@@ -266,6 +326,12 @@ package mx.messaging.messages
          * to the client
          * 
          * @return Timestamp in milliseconds since epoch
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */             
         public function get serverSendTime():Number
         {
@@ -277,6 +343,12 @@ package mx.messaging.messages
          * the server
          * 
          * @return Timestamp in milliseconds since epoch
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get clientReceiveTime():Number
         {
@@ -302,6 +374,12 @@ package mx.messaging.messages
          * at the server endpoint
          * 
          * @return Message size in Bytes
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get responseMessageSize():int
         {
@@ -314,6 +392,12 @@ package mx.messaging.messages
          * 
          * @return true if this message was pushed to the client and is not a response to a message that
          * originated on the client
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get pushedMessageFlag():Boolean
         {
@@ -326,6 +410,12 @@ package mx.messaging.messages
          * clocks must be in sync for this to be meaningful.
          * 
          * @return Total push time in milliseconds
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */             
         public function get totalPushTime():Number
         {           
@@ -338,6 +428,12 @@ package mx.messaging.messages
          * and client clocks must be in sync for this to be meaningful.
          * 
          * @return One way server push time in milliseconds
+         *
+         *  @langversion 3.0
+         *  @playerversion Flash 9
+         *  @playerversion AIR 1.1
+         *  @productversion BlazeDS 4
+         *  @productversion LCDS 3          
          */ 
         public function get pushOneWayTime():Number
         {
@@ -349,6 +445,12 @@ package mx.messaging.messages
          * when the client that caused a push message sent its message.
          * 
          * @return Timestamp in milliseconds since epoch
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */             
         public function get originatingMessageSentTime():Number
         {
@@ -360,6 +462,12 @@ package mx.messaging.messages
          * caused this pushed message
          * 
          * @return Pushed causer message size in Bytes
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function get originatingMessageSize():Number
         {
@@ -376,6 +484,12 @@ package mx.messaging.messages
          * </listing>            
          * 
          * @return String containing a summary of all information available in MPI
+         *
+         * @langversion 3.0
+         * @playerversion Flash 9
+         * @playerversion AIR 1.1
+         * @productversion BlazeDS 4
+         * @productversion LCDS 3          
          */         
         public function prettyPrint():String
         {       
@@ -390,12 +504,12 @@ package mx.messaging.messages
                 alertString +="Network Roundtrip time (s): " + (networkRTT / 1000) + "\n";
             if (serverProcessingTime != 0)
                 alertString +="Server processing time (s): " + (serverProcessingTime / 1000) + "\n";
-            if (serverAdapterTime != 0)
-                alertString +="Server adapter time (s): " + (serverAdapterTime / 1000) + "\n";      
-            if (serverNonAdapterTime != 0)
-                alertString +="Server non-adapter time (s): " + (serverNonAdapterTime / 1000) + "\n"                  
-            if (serverAdapterExternalTime != 0)
-                alertString +="Server adapter external time (s): " + (serverAdapterExternalTime / 1000) + "\n";     
+      		if (serverAdapterTime != 0)
+      			alertString +="Server adapter time (s): " + (serverAdapterTime / 1000) + "\n";      
+      		if (serverNonAdapterTime != 0)
+      			alertString +="Server non-adapter time (s): " + (serverNonAdapterTime / 1000) + "\n"      			  
+      		if (serverAdapterExternalTime != 0)
+      			alertString +="Server adapter external time (s): " + (serverAdapterExternalTime / 1000) + "\n";     
             
             if (pushedMessageFlag)
             {
@@ -406,8 +520,8 @@ package mx.messaging.messages
                     alertString += "Push one way time (s): " + (pushOneWayTime / 1000) + "\n";
                 if (originatingMessageSize != 0)
                     alertString += "Originating Message size (B): " + originatingMessageSize + "\n";
-                if (serverPollDelay != 0)
-                    alertString +="Server poll delay (s): " + (serverPollDelay / 1000) + "\n";                        
+      			if (serverPollDelay != 0)
+      				alertString +="Server poll delay (s): " + (serverPollDelay / 1000) + "\n";                        
             }
             
             return alertString;

@@ -62,6 +62,12 @@ public interface ISOAPEncoder extends IXMLEncoder
     /**
      * Creates a SOAP-encoded request to an operation from the given input
      * parameters and headers.
+	 * 
+	 * @param args values to be encoded in the body of the SOAP request.
+	 * 
+	 * @param headers header values to be encoded in the SOAP envelope.
+     * 
+     * @return SOAP-encoded XML representation of the passed in arguments and headers.
      */
     function encodeRequest(args:* = null, headers:Array = null):XML;
 }

@@ -16,6 +16,7 @@ import flash.display.LoaderInfo;
 import flash.display.MovieClip;
 import flash.events.ErrorEvent;
 import flash.events.Event;
+import flash.events.IEventDispatcher;
 import flash.events.IOErrorEvent;
 import flash.events.SecurityErrorEvent;
 import flash.events.TimerEvent;
@@ -25,18 +26,26 @@ import flash.text.TextFieldAutoSize;
 import flash.utils.Dictionary;
 import flash.utils.Timer;
 import flash.utils.getDefinitionByName;
+
 import mx.core.RSLItem;
 import mx.core.RSLListLoader;
 import mx.events.ModuleEvent;
+import mx.events.Request;
+import mx.events.RSLEvent;
+import mx.managers.SystemManagerGlobals;
 import mx.resources.IResourceManager;
 import mx.resources.ResourceManager;
+import mx.utils.LoaderUtil;
+
+use namespace mx_internal;
 
 [ExcludeClass]
 
 /**
  *  @private
  */
-public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
+public class FlexModuleFactory extends MovieClip
+	implements IFlexModuleFactory
 {
 	include "../core/Version.as";
 
@@ -95,62 +104,22 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
     {
 		super();
 
-		var rsls:Array = info()["rsls"];
-		var cdRsls:Array = info()["cdRsls"];
-		        
-		// Put cross-domain RSL information in the RSL list.
-        var rslList:Array = [];
-        var n:int;
-        var i:int;
-		if (cdRsls && cdRsls.length > 0)
-		{
-			var crossDomainRSLItem:Class = Class(getDefinitionByName("mx.core::CrossDomainRSLItem"));
-			n = cdRsls.length;
-			for (i = 0; i < n; i++)
-			{
-				// If crossDomainRSLItem is null, then this is a compiler error. It should not be null.
-				var cdNode:Object = new crossDomainRSLItem(
-					cdRsls[i]["rsls"],
-					cdRsls[i]["policyFiles"],
-					cdRsls[i]["digests"],
-					cdRsls[i]["types"],
-					cdRsls[i]["isSigned"]);
-				
-				rslList.push(cdNode);				
-			}
-			
-		}
-
-		// Append RSL information in the RSL list.
-		if (rsls != null && rsls.length > 0)
-		{
-			n = rsls.length;
-			for (i = 0; i < n; i++)
-			{
-			    var node:RSLItem = new RSLItem(rsls[i].url);
-				rslList.push(node);
-			}
-		}
-
-        rslListLoader = new RSLListLoader(rslList);
-
 		mixinList = info()["mixins"];
 
 		stop(); // Make sure to stop the playhead on the currentframe
         
+        loaderInfo.addEventListener(Event.INIT, moduleInitHandler);
 		loaderInfo.addEventListener(Event.COMPLETE, moduleCompleteHandler);
 
 	    var docFrame:int = totalFrames == 1 ? 0 : 1;
-        
+
         addEventListener(Event.ENTER_FRAME, docFrameListener);
 
 		timer = new Timer(100);
 		timer.addEventListener(TimerEvent.TIMER, timerHandler);
 		timer.start();
-
-        update();
     }
-    
+
     private function docFrameListener(event:Event):void
     {
         if (currentFrame == 2)
@@ -158,25 +127,25 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
             removeEventListener(Event.ENTER_FRAME, docFrameListener);
             if (totalFrames > 2)
                 addEventListener(Event.ENTER_FRAME, extraFrameListener);
-
+            
             docFrameHandler();
         }
     }
-
+    
     private function extraFrameListener(event:Event):void
     {
         if (lastFrame == currentFrame)
             return;
-
+        
         lastFrame = currentFrame;
-
+        
         if (currentFrame + 1 > totalFrames)
             removeEventListener(Event.ENTER_FRAME, extraFrameListener);
-
+        
         extraFrameHandler();
     }
 
-	//--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 	//
 	//  Variables
 	//
@@ -203,6 +172,11 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 	private var appReady:Boolean = false;
     
     /**
+     *  @private
+     */
+    private var appInitDone:Boolean = false;
+    
+    /**
 	 *  @private
 	 */
 	private var appLoaded:Boolean = false;
@@ -211,13 +185,13 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 	 *  @private
 	 */
 	private var timer:Timer = null;
-
+    
     /**
      *  @private
      *  Track which frame was last processed
      */
     private var lastFrame:int;
-
+    
     /**
 	 *  @private
 	 */
@@ -228,30 +202,146 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 	 */
 	private var errorMessage:String = null;
 
+    /**
+     *  @private
+     * 
+     *  This exists only to provide a reference to this 
+     *  module's resource bundles. This module is opting
+     *  into referencing its own resource bundles so the
+     *  ResourceManager does not need to do it. This 
+     *  arrangement keeps the ResourceManager from pinning
+     *  the module in memory.
+     */
+    private var resourceBundles:Array;
+    
+    /**
+     *  @private
+     *  Array of RSLData objects that represent the list of RSLs this
+     *  module factory is loading. Each element of the Array is an 
+     *  Array of RSLData.
+     */ 
+    private var rslDataList:Array
+    
+	//--------------------------------------------------------------------------
+	//
+	//  Properties: IFlexModuleFactory
+	//
+	//--------------------------------------------------------------------------
+
+    //----------------------------------
+    //  allowDomainsInNewRSLs
+    //----------------------------------
+    
+    /**
+     *  @private
+     */ 
+    private var _allowDomainsInNewRSLs:Boolean = true;
+    
+    /**
+     *  @inheritDoc
+     *
+     *  @langversion 3.0
+     *  @playerversion Flash 10.2
+     *  @playerversion AIR 2.6
+     *  @productversion Flex 4.5
+     */   
+    public function get allowDomainsInNewRSLs():Boolean
+    {
+        return _allowDomainsInNewRSLs;
+    }
+    
+    /**
+     *  @private
+     */ 
+    public function set allowDomainsInNewRSLs(value:Boolean):void
+    {
+        _allowDomainsInNewRSLs = value;
+    }
+    
+    //----------------------------------
+    //  allowInsecureDomainsInNewRSLs
+    //----------------------------------
+    
+    /**
+     *  @private
+     */ 
+    private var _allowInsecureDomainsInNewRSLs:Boolean = true;
+    
+    /**
+     *  @inheritDoc
+     *
+     *  @langversion 3.0
+     *  @playerversion Flash 10.2
+     *  @playerversion AIR 2.6
+     *  @productversion Flex 4.5
+     */   
+    public function get allowInsecureDomainsInNewRSLs():Boolean
+    {
+        return _allowInsecureDomainsInNewRSLs;
+    }
+    
+    /**
+     *  @private
+     */ 
+    public function set allowInsecureDomainsInNewRSLs(value:Boolean):void
+    {
+        _allowInsecureDomainsInNewRSLs = value;
+    }
+    
     //----------------------------------
     //  preloadedRSLs
     //----------------------------------
-
+    
     /**
-     *  The RSLs loaded by this FlexModuleFactory before the application 
-     *  starts. RSLs loaded by the application are not included in this list.
-     * 
-     *  Information about preloadedRSLs is stored in a Dictionary. The key is
-     *  the RSL's LoaderInfo. The value is the url the RSL was loaded from.
+     *  @inheritDoc 
+     *  
      */
     public function  get preloadedRSLs():Dictionary
     {
-       // Overriden by compiler generate code.
+        // Overridden by compiler generate code.
         return null;                
     }
+    
+    //--------------------------------------------------------------------------
+    //
+    //  Methods: IFlexModuleFactory
+    //
+    //--------------------------------------------------------------------------
+    
+    /**
+     *  @inheritDoc 
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 4.5
+     */ 
+    public function addPreloadedRSL(loaderInfo:LoaderInfo, rsl:Vector.<RSLData>):void
+    {
+        preloadedRSLs[loaderInfo] = rsl;
+        if (hasEventListener(RSLEvent.RSL_ADD_PRELOADED))
+        {
+            var rslEvent:RSLEvent = new RSLEvent(RSLEvent.RSL_ADD_PRELOADED);
+            rslEvent.loaderInfo = loaderInfo;
+            dispatchEvent(rslEvent);
+        }
         
-	//--------------------------------------------------------------------------
-	//
-	//  Methods
-	//
-	//--------------------------------------------------------------------------
+    }
+    
+    /**
+   	 *  @private
+	 *  This method is overridden in the autogenerated subclass.
+	 *  It is part of TLF's ISWFContext interface.
+	 *  Although this class does not declare that it implements this interface,
+	 *  the autogenerated subclass does.
+   	 */
+    public function callInContext(fn:Function, thisArg:Object,
+								  argArray:Array, returns:Boolean = true):*
+    {
+        return undefined;
+    }
 
-  	/**
+    /**
    	 *  @private
 	 *  This method is overridden in the autogenerated subclass.
    	 */
@@ -287,9 +377,9 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
      */  
     public function allowDomain(... domains):void
     {
-       // Overridden by compiler generated code.
+        // Overridden by compiler generated code.
     }
-
+    
     /**
      *  Calls Security.allowInsecureDomain() for the SWF associated with this FlexModuleFactory
      *  plus all the SWFs assocatiated with RSLs preloaded by this FlexModuleFactory.
@@ -297,11 +387,61 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
      */  
     public function allowInsecureDomain(... domains):void
     {
-       // Overridden by compiler generated code.
+        // Overridden by compiler generated code.
     }
+    
+    /**
+     * @private
+     *  A map of fully-qualified interface names,
+     *  such as "mx.managers::IPopUpManager",
+     *  to instances,
+     */
+    private var implMap:Object = {};
+    
+    /**
+     * @private
+     *  Adds an interface-name-to-implementation-class mapping to the registry,
+     *  if a class hasn't already been registered for the specified interface.
+     *  The class must implement a getInstance() method which returns
+     *  its singleton instance.
+     */
+    public function registerImplementation(interfaceName:String,
+                                           impl:Object):void
+    {
+        var c:Object = implMap[interfaceName];
+        if (!c)
+            implMap[interfaceName] = impl;
+    }
+    
+    /**
+     * @private
+     *  Returns the singleton instance of the implementation class
+     *  that was registered for the specified interface,
+     *  by looking up the class in the registry
+     *  and calling its getInstance() method.
+     * 
+     *  This method should not be called at static initialization time,
+     *  because the factory class may not have called registerImplementation() yet.
+     */
+    public function getImplementation(interfaceName:String):Object
+    {
+        var c:Object = implMap[interfaceName];
+        return c;
+    }
+    
+    //--------------------------------------------------------------------------
+	//
+	//  Methods
+	//
+	//--------------------------------------------------------------------------
 
    /**
     *  @inheritDoc
+    *  
+    *  @langversion 3.0
+    *  @playerversion Flash 9
+    *  @playerversion AIR 1.1
+    *  @productversion Flex 3
     */
     public function getDefinitionByName(name:String):Object
     {
@@ -324,6 +464,10 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
         {
             case INIT_STATE:
 			{
+                if (!appInitDone)
+                    return;
+                
+                getRSLInfo();
                 if (rslListLoader.isDone())
                     state = APP_LOAD_STATE;
                 else
@@ -346,6 +490,7 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
             {
                 if (rslListLoader.isDone())
                 {
+                    rslListLoader = null;
                     state = APP_LOAD_STATE;
                 }
                 break;
@@ -388,7 +533,7 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
         			timer.reset();
 
                     dispatchEvent(new Event("ready"));
-
+                    
                     loaderInfo.removeEventListener(Event.COMPLETE, moduleCompleteHandler);
                 }
                 break;
@@ -412,13 +557,64 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
                 
                 dispatchEvent(new ModuleEvent(ModuleEvent.ERROR, false, false, 
                               0, 0, errorMessage));
-
+                
                 loaderInfo.removeEventListener(Event.COMPLETE, moduleCompleteHandler);
                 break;
 			}
         }
     }
 
+    /**
+     *  @private
+     *  Get the RSL URLs and add them to the RSLListLoader.
+     */   
+    private function getRSLInfo():void
+    {
+        var rsls:Array = info()["rsls"];
+        var cdRsls:Array = info()["cdRsls"];
+        
+        // Put cross-domain RSL information in the RSL list.
+        var rslItemList:Array = [];
+        var n:int;
+        var i:int;
+        if (cdRsls && cdRsls.length > 0)
+        {
+            rslDataList = LoaderUtil.processRequiredRSLs(this, cdRsls);
+            
+            var normalizedURL:String = LoaderUtil.normalizeURL(this.loaderInfo);
+            var crossDomainRSLItem:Class = Class(getDefinitionByName("mx.core::CrossDomainRSLItem"));
+            n = rslDataList.length;
+            for (i = 0; i < n; i++)
+            {
+                var rslWithFailovers:Array = rslDataList[i];
+                
+                // If crossDomainRSLItem is null, then this is a compiler error. It should not be null.
+                var cdNode:Object = new crossDomainRSLItem(rslWithFailovers,
+                    normalizedURL,
+                    this);
+                rslItemList.push(cdNode);               
+            }
+        }
+        
+        // Append RSL information in the RSL list.
+        if (rsls != null && rsls.length > 0)
+        {
+            if (normalizedURL == null)
+                normalizedURL = LoaderUtil.normalizeURL(this.loaderInfo);
+            
+            n = rsls.length;
+            for (i = 0; i < n; i++)
+            {
+                var node:RSLItem = new RSLItem(rsls[i].url, 
+                                               normalizedURL,
+                                               this);
+                rslItemList.push(node);
+            }
+        }
+        
+        rslListLoader = new RSLListLoader(rslItemList);
+    }
+    
     /**
 	 *  @private
 	 */
@@ -487,7 +683,7 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 		if (currentFrame < totalFrames)
             deferredNextFrame();
     }
-
+    
     /**
 	 *  @private
 	 */
@@ -509,8 +705,8 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 		var resourceManager:IResourceManager =
 			ResourceManager.getInstance();
 		
-		resourceManager.installCompiledResourceBundles(
-			applicationDomain, compiledLocales, compiledResourceBundleNames);
+		resourceBundles = resourceManager.installCompiledResourceBundles(
+			applicationDomain, compiledLocales, compiledResourceBundleNames, true);
 
 		// If the localeChain wasn't specified in the FlashVars of the SWF's
 		// HTML wrapper, or in the query parameters of the SWF URL,
@@ -577,9 +773,20 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
 	 */
     private function rslCompleteHandler(event:Event):void
     {
-        var rsl:RSLItem = rslListLoader.getItem(rslListLoader.getIndex());
         if (event.target is LoaderInfo)
-            preloadedRSLs[event.target] = rsl.urlRequest.url;
+        {
+            var rslIndex:int = rslListLoader.getIndex();
+            var rsl:Vector.<RSLData> = Vector.<RSLData>(rslDataList[rslIndex]);
+            var moduleFactory:IFlexModuleFactory = this;
+            if (rsl && rsl[0].moduleFactory)
+                moduleFactory = rsl[0].moduleFactory; 
+            
+            if (moduleFactory == this)
+                preloadedRSLs[event.target] =  rsl;
+            else 
+                moduleFactory.addPreloadedRSL(LoaderInfo(event.target), rsl);
+        }
+
         update();
     }
 
@@ -599,8 +806,17 @@ public class FlexModuleFactory extends MovieClip implements IFlexModuleFactory
             detailedError = "";
             
         message = "RSL " + rsl.urlRequest.url + " failed to load. " + detailedError;              
-        trace(message);
         displayError(message);
+    }
+
+    /**
+     *  @private
+     */
+    private function moduleInitHandler(event:Event):void
+    {
+        loaderInfo.removeEventListener(Event.INIT, moduleInitHandler);
+        appInitDone = true;
+        update();
     }
 
     /**

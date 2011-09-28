@@ -35,6 +35,11 @@ use namespace mx_internal;
  * 
  * <p>The exact way in which the HTTP operation arguments is put into the HTTP body is determined
  * by the serializationFilter used.</p>
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 public class Operation extends AbstractOperation
 {
@@ -48,10 +53,24 @@ public class Operation extends AbstractOperation
      *  @param service The HTTPMultiService object defining the service.
      *
      *  @param name The name of the service.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
+
+     *  Creates a new Operation. 
+     *
+     *  @param service The HTTPMultiService object defining the service.
+     *
+     *  @param name The name of the service.
      */
     public function Operation(service:HTTPMultiService = null, name:String = null)
     {
         super(service, name);
+
+        // Set this to false even if the super constructor initialized concurrency to the default.
+        _concurrencySet = false;
 
         _multiService = service;
 
@@ -60,18 +79,83 @@ public class Operation extends AbstractOperation
     
     /**
      * Stores the parent service which controls this operation.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     private var _multiService:HTTPMultiService;
+
+
+    /**
+     * @private
+     */
+    private var _concurrency:String;
+    /**
+     * @private
+     */
+    private var _concurrencySet:Boolean;
+
+    [Inspectable(enumeration="multiple,single,last", defaultValue="multiple", category="General")]
+    /**
+     * Value that indicates how to handle multiple calls to the same service operation. The default
+     * value is <code>multiple</code>. The following values are permitted:
+     * <ul>
+     * <li><code>multiple</code> Existing requests are not cancelled, and the developer is
+     * responsible for ensuring the consistency of returned data by carefully
+     * managing the event stream. This is the default value.</li>
+     * <li><code>single</code> Only a single request at a time is allowed on the operation;
+     * multiple requests generate a fault.</li>
+     * <li><code>last</code> Making a request cancels any existing request.</li>
+     * </ul>
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
+     */
+    override public function get concurrency():String
+    {
+        // This override is necessary because unlike the old-style HttpService HttpOperation setup
+        // each HttpMultiService can have many http.Operations and concurrency settings don't have
+        // to be the same for the service and all its operations. If concurrency is not set on this
+        // operation, the setting from HttpMultiService is used. This code cannot be in AbstractOperation
+        // because the old HttpService doesn't hold a value for concurrency (and doesn't need to). It
+        // simply gets/sets concurrency for its only operation.
+        if (_concurrencySet)
+        {
+            return _concurrency;
+        }
+        //else
+        return _multiService.concurrency;
+    }
+    override public function set concurrency(c:String):void
+    {
+        _concurrency = c;
+        _concurrencySet = true;
+    }
+
 
     /**
      * Keep track of whether or not this has been set explicitly on the
      * operation.  If not, we'll inherit this value from the service level.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     private var _makeObjectsBindableSet:Boolean;
 
     [Inspectable(defaultValue="true", category="General")]
     /**
      * When this value is true, anonymous objects returned are forced to bindable objects.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     override public function get makeObjectsBindable():Boolean
     {
@@ -143,6 +227,11 @@ public class Operation extends AbstractOperation
      * directly whereas rootURL specifies the name of a file whose directory name is
      * prepended.  If neither rootURL nor baseURL are set explicitly, the directory name
      * of the .swf file is prepended to relative paths.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     override public function get rootURL():String
     {
@@ -225,6 +314,11 @@ public class Operation extends AbstractOperation
      * @return AsyncToken Call using the asynchronous completion token pattern.
      * The same object is available in the <code>result</code> and
      * <code>fault</code> events from the <code>token</code> property.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     override public function send(... args:Array):AsyncToken
     {
@@ -332,6 +426,11 @@ public class Operation extends AbstractOperation
 
     /**
      * Use the asyncRequest from the parent service
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     override mx_internal function get asyncRequest():AsyncRequest
     {

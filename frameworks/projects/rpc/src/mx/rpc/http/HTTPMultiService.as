@@ -23,6 +23,7 @@ import mx.resources.IResourceManager;
 import mx.resources.ResourceManager;
 import mx.rpc.AbstractService;
 import mx.rpc.events.FaultEvent;
+import mx.rpc.mxml.Concurrency;
 import mx.utils.URLUtil;
 
 use namespace mx_internal;
@@ -30,12 +31,22 @@ use namespace mx_internal;
 /**
  *  Dispatched when an HTTPMultiService call returns successfully.
  * @eventType mx.rpc.events.ResultEvent.RESULT 
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 [Event(name="result", type="mx.rpc.events.ResultEvent")]
 
 /**
  *  Dispatched when an HTTPMultiService call fails.
  * @eventType mx.rpc.events.FaultEvent.FAULT 
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 [Event(name="fault", type="mx.rpc.events.FaultEvent")]
 
@@ -43,6 +54,11 @@ use namespace mx_internal;
  *  The invoke event is fired when an HTTPMultiService call is invoked so long as
  *  an Error is not thrown before the Channel attempts to send the message.
  * @eventType mx.rpc.events.InvokeEvent.INVOKE 
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 [Event(name="invoke", type="mx.rpc.events.InvokeEvent")]
 
@@ -78,6 +94,11 @@ use namespace mx_internal;
  *  <p><b>Note:</b> Due to a software limitation, like HTTPService, the HTTPMultiService does 
  *  not generate user-friendly error messages when using GET and not using a proxy.</p>
  * 
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
+ * 
  *  @see mx.rpc.http.HTTPService
  */
 public dynamic class HTTPMultiService extends AbstractService
@@ -94,6 +115,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  would be <code>Application.application.url</code>).
      *
      *  @param baseURL The URL the HTTPService should use when computing relative URLS.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function HTTPMultiService(baseURL:String = null, destination:String = null)
     {
@@ -114,6 +140,8 @@ public dynamic class HTTPMultiService extends AbstractService
         _log = Log.getLogger("mx.rpc.http.HTTPMultiService");
 
         this.baseURL = baseURL;
+
+        concurrency = Concurrency.MULTIPLE;
     }
 
     //--------------------------------------------------------------------------
@@ -139,6 +167,16 @@ public dynamic class HTTPMultiService extends AbstractService
      */
     private var resourceManager:IResourceManager = ResourceManager.getInstance();
 
+    /**
+     *  @private
+     */
+    private var _showBusyCursor:Boolean = false;
+
+    /**
+     *  @private
+     */
+    private var _concurrency:String;
+
     //--------------------------------------------------------------------------
     //
     // Properties
@@ -158,12 +196,62 @@ public dynamic class HTTPMultiService extends AbstractService
      */
     public var contentType:String = AbstractOperation.CONTENT_TYPE_FORM;
 
+    //----------------------------------
+    //  concurrency
+    //----------------------------------
+
+    [Inspectable(enumeration="multiple,single,last", defaultValue="multiple", category="General")]
+    /**
+     * Value that indicates how to handle multiple calls to the same operation within the service.
+     * The concurrency setting set here will be used for operations that do not specify concurrecny.
+     * Individual operations that have the concurrency setting set directly will ignore the value set here.
+     * The default value is <code>multiple</code>. The following values are permitted:
+     * <ul>
+     * <li><code>multiple</code> Existing requests are not cancelled, and the developer is
+     * responsible for ensuring the consistency of returned data by carefully
+     * managing the event stream. This is the default value.</li>
+     * <li><code>single</code> Only a single request at a time is allowed on the operation;
+     * multiple requests generate a fault.</li>
+     * <li><code>last</code> Making a request cancels any existing request.</li>
+     * </ul>
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
+     */
+    public function get concurrency():String
+    {
+        return _concurrency;
+    }
+    public function set concurrency(c:String):void
+    {
+        _concurrency = c;
+    }
+
+    //----------------------------------
+    //  showBusyCursor
+    //----------------------------------
+
     [Inspectable(defaultValue="false", category="General")]
     /**
     * If <code>true</code>, a busy cursor is displayed while a service is executing. The default
     * value is <code>false</code>.
+    *  
+    *  @langversion 3.0
+    *  @playerversion Flash 9
+    *  @playerversion AIR 1.1
+    *  @productversion Flex 3
     */
-    public var showBusyCursor:Boolean = false;
+    public function get showBusyCursor():Boolean
+    {
+        return _showBusyCursor;
+    }
+
+    public function set showBusyCursor(sbc:Boolean):void
+    {
+        _showBusyCursor = sbc;
+    }
 
     //----------------------------------
     //  headers
@@ -174,6 +262,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  Custom HTTP headers to be sent to the third party endpoint. If multiple headers need to
      *  be sent with the same name the value should be specified as an Array.  These headers are sent
      *  to all operations.  You can also set headers at the operation level.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public var headers:Object = {};
 
@@ -187,6 +280,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  That means  they send PropertyChangeEvents when their property values are being changed.  
      *  This is the default value for any operations whose makeObjectsBindable property 
      *  is not set explicitly.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public var makeObjectsBindable:Boolean = true;
 
@@ -200,6 +298,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  Permitted values are <code>GET</code>, <code>POST</code>, <code>HEAD</code>,
      *  <code>OPTIONS</code>, <code>PUT</code>, <code>TRACE</code> and <code>DELETE</code>.
      *  Lowercase letters are converted to uppercase letters. The default value is <code>GET</code>.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public var method:String = HTTPRequestMessage.GET_METHOD;
 
@@ -240,6 +343,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *    in an ActionScript XML object, which can be accessed using ECMAScript for 
      *    XML (E4X) expressions.</li>
      *  </ul>
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get resultFormat():String
     {
@@ -291,6 +399,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  This contains a prefix which is prepended onto any URLs when it is set.
      *  It defaults to null in which case the URL for the SWF is used to compute
      *  relative URLs.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public var baseURL:String;
     
@@ -316,6 +429,11 @@ public dynamic class HTTPMultiService extends AbstractService
      *  <code>useProxy</code> property is set to <code>false</code>.
      *
      *  @default false    
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get useProxy():Boolean
     {
@@ -348,6 +466,11 @@ public dynamic class HTTPMultiService extends AbstractService
      * This serves as the default property for this instance so that we can
      * define a set of operations as direct children of the HTTPMultiService
      * tag in MXML.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function set operationList(ol:Array):void
     {
@@ -394,7 +517,9 @@ public dynamic class HTTPMultiService extends AbstractService
         if (_directChannelSet == null)
         {
             var dcs:ChannelSet = new ChannelSet();
-            dcs.addChannel(new DirectHTTPChannel("direct_http_channel"));
+            var dhc:DirectHTTPChannel = new DirectHTTPChannel("direct_http_channel");
+            dhc.requestTimeout = requestTimeout;
+            dcs.addChannel(dhc);
             _directChannelSet = dcs;            
         }
         return _directChannelSet;  

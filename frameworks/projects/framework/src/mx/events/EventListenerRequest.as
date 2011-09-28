@@ -23,6 +23,16 @@ import flash.events.Event;
  *  SystemManager picks up the event and redispatches it from itself.
  *  In general, this request is generated because some other code called
  *  the <code>addEventListener()</code> method for one of the approved events on its SystemManager.
+ *
+ *  This request is also dispatched by SystemManager to allow the marshal implementation
+ *  to handle adding or removing listeners differently.  When dispatched by the
+ *  SystemManager, the listener property is non-null;
+ *  
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 public class EventListenerRequest extends SWFBridgeRequest
 {
@@ -36,11 +46,21 @@ public class EventListenerRequest extends SWFBridgeRequest
 
 	/**
 	 *  Request to add an event listener.
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public static const ADD_EVENT_LISTENER_REQUEST:String = "addEventListenerRequest";
 
 	/**
 	 *  Request to remove an event listener.
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public static const REMOVE_EVENT_LISTENER_REQUEST:String = "removeEventListenerRequest";
 
@@ -58,6 +78,11 @@ public class EventListenerRequest extends SWFBridgeRequest
      	*  @param event The event to marshal.
      	*  
      	*  @return An EventListenerRequest that defines the new event.
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public static function marshal(event:Event):EventListenerRequest
 	{
@@ -65,6 +90,7 @@ public class EventListenerRequest extends SWFBridgeRequest
 
 		return new EventListenerRequest(eventObj.type, eventObj.bubbles,
 										eventObj.cancelable, eventObj.eventType,
+                                        ("listener" in eventObj) ? eventObj.listener : null,
                                         eventObj.useCapture, eventObj.priority,
                                         eventObj.useWeakReference); 
 	}
@@ -94,10 +120,16 @@ public class EventListenerRequest extends SWFBridgeRequest
 	 *  @param useWeakReference Determines whether the reference to the listener is strong or weak.
 	 * 
 	 *  @see flash.events.IEventDispatcher#addEventListener
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */ 
 	public function EventListenerRequest(type:String, bubbles:Boolean = false, 
 										 cancelable:Boolean = true,
 								         eventType:String = null,
+										 listener:Function = null,
 								         useCapture:Boolean = false,
 								         priority:int = 0, 
 								         useWeakReference:Boolean = false)
@@ -106,6 +138,7 @@ public class EventListenerRequest extends SWFBridgeRequest
 		super(type, false, false);
 
 		_eventType = eventType;
+		_listener = listener;
 		_useCapture = useCapture;
 		_priority = priority;
 		_useWeakReference = useWeakReference;
@@ -131,6 +164,11 @@ public class EventListenerRequest extends SWFBridgeRequest
      *  to <code>addEventListener()</code>.
      *
 	 *  @see flash.events.IEventDispatcher#addEventListener
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public function get priority():int
 	{
@@ -151,6 +189,11 @@ public class EventListenerRequest extends SWFBridgeRequest
      *  to <code>addEventListener()</code>.
      *
 	 *  @see flash.events.IEventDispatcher#addEventListener
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public function get useCapture():Boolean
 	{
@@ -170,10 +213,34 @@ public class EventListenerRequest extends SWFBridgeRequest
 	 *  The type of the event to listen to.
      *
 	 *  @see flash.events.Event#type
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public function get eventType():String
 	{
 		return _eventType;
+	}
+	
+	//----------------------------------
+	//  listener
+	//----------------------------------
+
+	/**
+     *  @private
+     */
+    private var _listener:Function;
+	
+	/**
+	 *  The method or function to call
+     *
+	 *  @see flash.events.IEventDispatcher#addEventListener
+	 */
+	public function get listener():Function
+	{
+		return _listener;
 	}
 	
 	//----------------------------------
@@ -190,6 +257,11 @@ public class EventListenerRequest extends SWFBridgeRequest
      *  to <code>addEventListener()</code>.
      *
 	 *  @see flash.events.IEventDispatcher#addEventListener
+	 *  
+	 *  @langversion 3.0
+	 *  @playerversion Flash 9
+	 *  @playerversion AIR 1.1
+	 *  @productversion Flex 3
 	 */
 	public function get useWeakReference():Boolean
 	{
@@ -208,7 +280,7 @@ public class EventListenerRequest extends SWFBridgeRequest
 	override public function clone():Event
 	{
 		return new EventListenerRequest(type, bubbles, cancelable,
-										eventType, useCapture,
+										eventType, listener, useCapture,
                                         priority, useWeakReference); 
 	}
 }

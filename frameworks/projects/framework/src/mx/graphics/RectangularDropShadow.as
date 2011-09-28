@@ -50,6 +50,11 @@ import mx.utils.GraphicsUtil;
  *  
  *  @see flash.filters.DropShadowFilter
  *  @see flash.display.DisplayObject
+ *  
+ *  @langversion 3.0
+ *  @playerversion Flash 9
+ *  @playerversion AIR 1.1
+ *  @productversion Flex 3
  */
 public class RectangularDropShadow
 {
@@ -63,6 +68,11 @@ public class RectangularDropShadow
 
     /**
      *  Constructor.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function RectangularDropShadow()
     {
@@ -129,6 +139,11 @@ public class RectangularDropShadow
 
     /**
      *  @copy flash.filters.DropShadowFilter#alpha
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get alpha():Number
     {
@@ -161,6 +176,11 @@ public class RectangularDropShadow
 
     /**
      *  @copy flash.filters.DropShadowFilter#angle
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get angle():Number
     {
@@ -193,6 +213,11 @@ public class RectangularDropShadow
 
     /**
      *  @copy flash.filters.DropShadowFilter#color
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get color():int
     {
@@ -225,6 +250,11 @@ public class RectangularDropShadow
 
     /**
      *  @copy flash.filters.DropShadowFilter#distance
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get distance():Number
     {
@@ -259,6 +289,11 @@ public class RectangularDropShadow
      *  The corner radius of the top left corner
 	 *  of the rounded rectangle that is casting the shadow.
 	 *  May be zero for non-rounded rectangles.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get tlRadius():Number
     {
@@ -293,6 +328,11 @@ public class RectangularDropShadow
      *  The corner radius of the top right corner
 	 *  of the rounded rectangle that is casting the shadow.
 	 *  May be zero for non-rounded rectangles.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get trRadius():Number
     {
@@ -328,6 +368,11 @@ public class RectangularDropShadow
 	 *  of the rounded rectangle that is casting the shadow.
 	 *  May be zero for non-rounded
      *  rectangles.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get blRadius():Number
     {
@@ -362,6 +407,11 @@ public class RectangularDropShadow
      *  The corner radius of the bottom right corner
 	 *  of the rounded rectangle that is casting the shadow.
 	 *  May be zero for non-rounded rectangles.
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 3
      */
     public function get brRadius():Number
     {
@@ -376,6 +426,82 @@ public class RectangularDropShadow
     	if (_brRadius != value)
     	{
 			_brRadius = value;
+			changed = true;
+		}
+    }
+
+    //----------------------------------
+    //  blurX
+    //----------------------------------
+
+    /**
+     *  @private
+     *  Storage for the brRadius property.
+     */
+    private var _blurX:Number = 4;
+
+	[Inspectable]
+
+    /**
+     *  The amount of horizontal blur.
+     *  @default 4
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 4
+     */
+    public function get blurX():Number
+    {
+        return _blurX;
+    }
+
+    /**
+     *  @private
+     */
+    public function set blurX(value:Number):void
+    {
+    	if (_blurX != value)
+    	{
+			_blurX = value;
+			changed = true;
+		}
+    }
+
+    //----------------------------------
+    //  blurY
+    //----------------------------------
+
+    /**
+     *  @private
+     *  Storage for the brRadius property.
+     */
+    private var _blurY:Number = 4;
+
+	[Inspectable]
+
+    /**
+     *  The amount of vertical blur.
+     *  @default 4
+     *  
+     *  @langversion 3.0
+     *  @playerversion Flash 9
+     *  @playerversion AIR 1.1
+     *  @productversion Flex 4
+     */
+    public function get blurY():Number
+    {
+        return _blurY;
+    }
+
+    /**
+     *  @private
+     */
+    public function set blurY(value:Number):void
+    {
+    	if (_blurY != value)
+    	{
+			_blurY = value;
 			changed = true;
 		}
     }
@@ -400,6 +526,11 @@ public class RectangularDropShadow
      *  @param width The width of the shadow, in pixels.
      *  
      *  @param height The height of the shadow, in pixels.
+    *  
+    *  @langversion 3.0
+    *  @playerversion Flash 9
+    *  @playerversion AIR 1.1
+    *  @productversion Flex 3
     */
 	public function drawShadow(g:Graphics, 
 							   x:Number, y:Number, 
@@ -566,10 +697,10 @@ public class RectangularDropShadow
 		// Create a Shape containing a round rectangle that the
 		// specified corner radii and very short sides.
 		var roundRectWidth:Number = Math.max(tlRadius, blRadius) + 
-								    2 * distance + 
+								    3 * Math.max(Math.abs(distance), 2) + 
 									Math.max(trRadius, brRadius);
 		var roundRectHeight:Number = Math.max(tlRadius, trRadius) +
-									 2 * distance +
+									 3 * Math.max(Math.abs(distance), 2) +
 									 Math.max(blRadius, brRadius);
 
 		if (roundRectWidth < 0 || roundRectHeight < 0)
@@ -594,7 +725,7 @@ public class RectangularDropShadow
 		// Get the size of the drop shadow that will be cast by this
 		// rounded rectangle.
 		var filter:DropShadowFilter = 
-			new DropShadowFilter(distance, angle, color, alpha);
+			new DropShadowFilter(distance, angle, color, alpha, blurX, blurY);
 		filter.knockout = true;	
 		var inputRect:Rectangle = new Rectangle(0, 0, 
 			roundRectWidth, roundRectHeight);
