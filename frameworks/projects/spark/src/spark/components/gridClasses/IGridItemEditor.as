@@ -137,7 +137,7 @@ public interface IGridItemEditor extends IDataRenderer, IVisualElement,
      *  @playerversion AIR 2.5
      *  @productversion Flex 4.5 
      */ 
-    function prepare():void;
+    function prepare(hasBeenRecycled:Boolean):void;
     
     /**
      *  Called just before the editor is closed. 
