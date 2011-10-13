@@ -227,7 +227,7 @@ public interface IGridItemRenderer extends IDataRenderer, IVisualElement
      *  @playerversion AIR 2.5
      *  @productversion Flex 4.5 
      */
-    function prepare(hasBeenRecycled:Boolean):void;
+    function prepare():void;
         
     /**
      *  Called from the item renderer parent's <code>updateDisplayList()</code> method 
